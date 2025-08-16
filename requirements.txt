@@ -1,0 +1,7 @@
+spacy nltk sentence-transformers
+chromadb
+spacy
+openai
+fastapi
+streamlit
+uvicorn[standard]
