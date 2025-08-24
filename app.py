@@ -1,3 +1,6 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,9 +11,7 @@ from transformers import pipeline
 import json
 from huggingface_hub import InferenceClient
 from openai import OpenAI
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 
 # Load models
 nlp = spacy.load("symptom_ner_model")  # Your trained NER model
@@ -177,4 +178,5 @@ def get_remedy(request: QueryRequest):
         "recommendation": response.choices[0].message.content
         }
         
+
 
