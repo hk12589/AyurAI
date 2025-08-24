@@ -114,26 +114,7 @@ def get_remedy(request: QueryRequest):
 
     if not extracted_symptoms:
         print("No symptoms detected.")
-        prompt = f"""
-        You are an Ayurvedic assistant. The patient reports: {user_input}.
-        Explain to the user clearly,
-        Including the disease name, dosha, and remedies in natural language.
-        """
-        
-        response = OpenAIClient.chat.completions.create(
-            model="gpt-5-mini",
-            messages=[
-                {"role": "system", "content": "You are an expert Ayurveda medical assistant."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
-        print("Response from OpenAI:", response.choices[0].message.content)
-        save_interaction(user_input, extracted_symptoms, None, 0, response.choices[0].message.content)
-        
-        return {       
-        "recommendation": response.choices[0].message.content
-        }
+        return {"recommendation": "I'm sorry, I couldn't identify any symptoms in your input. Please provide more details about your symptoms."}
     else:
         # Step 3: Embed extracted symptoms
         query_embedding = embedder.encode(", ".join(extracted_symptoms)).tolist()
@@ -306,6 +287,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
