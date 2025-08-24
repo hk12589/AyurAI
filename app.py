@@ -255,7 +255,8 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "user", "content": user_input})
 
         with st.spinner("Finding remedy..."):
-            res = requests.post(API_URL, json={"query": user_input})
+            #res = requests.post(API_URL, json={"query": user_input})
+            res = get_remedy(QueryRequest(query=user_input))
 
         if res.status_code == 200:
             data = res.json()
@@ -282,6 +283,7 @@ if st.button("Get Remedy"):
             st.error("Error fetching remedy")
 
     st.rerun()
+
 
 
 
