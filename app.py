@@ -15,16 +15,28 @@ import streamlit as st
 
 # Load key from streamlit secrets
 openai_api_key = st.secrets["openAI_key"]
+OpenAIClient = OpenAI(api_key=openai_api_key)  # Replace with your OpenAI API key
+
+# Load models
+@st.cache_resource
+def load_symptoms_model():
+    return spacy.load("symptom_ner_model")
+
+@st.cache_resource
+def load_embedder_model():
+    return SentenceTransformer("all-MiniLM-L6-v2")
+
+@st.cache_resource  # if using Streamlit
+def get_chroma_client():
+    return chromadb.PersistentClient(path="./chromadb_store")
 
 
 # Load models
-nlp = spacy.load("symptom_ner_model")  # Your trained NER model
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
-OpenAIClient = OpenAI(api_key=openai_api_key)  # Replace with your OpenAI API key
-
+nlp = load_symptoms_model()
+embedder = load_embedder_model()
 
 # ChromaDB client
-client = chromadb.PersistentClient(path="./chromadb_store")
+client = get_chroma_client()
 collection = client.get_or_create_collection(name="ayurveda_symptoms")
 
 # FastAPI app
@@ -40,32 +52,6 @@ app.add_middleware(
 )
 
 import sqlite3
-
-# Initialize and create table
-def init_db():
-    conn = sqlite3.connect("ayurAI_chatbot.db")  # this will create DB file if it doesn't exist
-    cursor = conn.cursor()
-
-    # Create table if not exists
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_query TEXT,
-        extracted_symptoms TEXT,
-        system_response TEXT,
-        score REAL,
-        openAI_response TEXT,                      
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-# Call this once before using DB
-init_db()
-print("✅ Database initialized and table created successfully.")
-
 # ...start save ingteraction to DB...
 def save_interaction(user_query, extracted_symptoms, system_response, score, openAI_response):
     import json
@@ -287,6 +273,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
