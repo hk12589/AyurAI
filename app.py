@@ -11,12 +11,16 @@ from transformers import pipeline
 import json
 from huggingface_hub import InferenceClient
 from openai import OpenAI
+import streamlit as st
+
+# Load key from streamlit secrets
+openai_api_key = st.secrets["openAI_key"]
 
 
 # Load models
 nlp = spacy.load("symptom_ner_model")  # Your trained NER model
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
-OpenAIClient = OpenAI(api_key="openai_api_key")  # Replace with your OpenAI API key
+OpenAIClient = OpenAI(api_key=openai_api_key)  # Replace with your OpenAI API key
 
 
 # ChromaDB client
@@ -283,6 +287,7 @@ if st.button("Get Remedy"):
             st.error("Error fetching remedy")
 
     st.rerun()
+
 
 
 
