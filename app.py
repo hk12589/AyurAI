@@ -262,7 +262,7 @@ if st.button("Get Remedy"):
             #res = requests.post(API_URL, json={"query": user_input})
             res = get_remedy(QueryRequest(query=user_input))
 
-        data = res.json()
+        data = res
         if "recommendation" in data:
             #formatted_output = format_llm_response(data["recommendation"])
             st.write_stream(stream_generator())                
@@ -286,6 +286,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
