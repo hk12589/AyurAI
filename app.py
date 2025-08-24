@@ -182,7 +182,7 @@ def get_remedy(request: QueryRequest):
         "recommendation": response.choices[0].message.content
         }
 
-
+#--------------UI Code from ui.py------------------
 import streamlit as st
 import requests
 import re
@@ -262,31 +262,31 @@ if st.button("Get Remedy"):
             #res = requests.post(API_URL, json={"query": user_input})
             res = get_remedy(QueryRequest(query=user_input))
 
-        if res.status_code == 200:
-            data = res.json()
-            if "recommendation" in data:
-                formatted_output = format_llm_response(data["recommendation"])
-                st.write_stream(stream_generator())                
-                #bot_reply = formatted_output            
+        data = res.json()
+        if "recommendation" in data:
+            #formatted_output = format_llm_response(data["recommendation"])
+            st.write_stream(stream_generator())                
+            #bot_reply = formatted_output            
                 
-            elif "matches" in data:
-                matches = data["matches"]
-                if matches:
-                    bot_reply = "Here are the top matches for your symptoms:\n\n"
-                    for match in matches:
-                        bot_reply += f"- **Disease:** {match['disease']}\n"
-                        bot_reply += f"  **Dosha:** {match['dosha']}\n"
-                        bot_reply += f"  **Remedies:** {match['remedy']}\n\n"
-                else:
-                    bot_reply = "No matching remedies found for your symptoms."
+        elif "matches" in data:
+            matches = data["matches"]
+            if matches:
+                bot_reply = "Here are the top matches for your symptoms:\n\n"
+                for match in matches:
+                    bot_reply += f"- **Disease:** {match['disease']}\n"
+                    bot_reply += f"  **Dosha:** {match['dosha']}\n"
+                    bot_reply += f"  **Remedies:** {match['remedy']}\n\n"
             else:
-                bot_reply = "No remedy found for given symptoms."
-
-            st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
+                bot_reply = "No matching remedies found for your symptoms."
         else:
-            st.error("Error fetching remedy")
+            bot_reply = "No remedy found for given symptoms."
+
+        st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
+        
+    st.rerun()
 
     st.rerun()
+
 
 
 
