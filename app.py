@@ -76,7 +76,7 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
         return str(obj)
         
     with conn.session as s:
-        s.execute('CREATE TABLE IF NOT EXISTS interactions (
+        s.execute("""CREATE TABLE IF NOT EXISTS interactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_query TEXT,
         extracted_symptoms TEXT,
@@ -84,16 +84,17 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
         score REAL,
         openAI_response TEXT,                      
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        );')
-        s.execute(
-                'INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
-                 VALUES (
+        ); """)
+        s.execute("""
+                 INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
+                 VALUES (?, ?, ?, ?, ?)
+                """, (
                 _as_string(user_query),
                 _as_string(extracted_symptoms),
                 _as_string(system_response),
                 float(score) if score is not None else None,
                 _as_string(openAI_response)
-            );')
+            );)
         s.commit()   
 # ...end save ingteraction to DB...
 
@@ -279,6 +280,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
