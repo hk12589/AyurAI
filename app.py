@@ -12,6 +12,40 @@ import json
 from huggingface_hub import InferenceClient
 from openai import OpenAI
 import streamlit as st
+import psycopg2
+
+config = st.secrets["database"]
+
+def get_connection():
+    if config["use"] == "postgres":
+        return psycopg2.connect(config["url"])
+    else:
+        return sqlite3.connect("feedback.db")
+
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
+    if config["use"] == "postgres":
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id SERIAL PRIMARY KEY,
+            query TEXT,
+            remedy TEXT,
+            feedback TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+    else:
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT,
+            remedy TEXT,
+            feedback TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+    conn.commit()
 
 # Load key from streamlit secrets
 openai_api_key = st.secrets["openAI_key"]
@@ -72,20 +106,31 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
                 return ", ".join(map(str, obj))
         return str(obj)
 
-    conn = sqlite3.connect("ayurAI_chatbot.db")
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
-        VALUES (?, ?, ?, ?, ?)
-    """, (
+    if config["use"] == "postgres":
+        cur.execute("""
+            INSERT INTO feedback (user_query, extracted_symptoms, system_response, score, openAI_response) 
+            VALUES (%s, %s, %s, %s, %s)""",
+            (
+        _as_string(user_query),
+        _as_string(extracted_symptoms),
+        _as_string(system_response),
+        float(score) if score is not None else None,
+        _as_string(openAI_response)
+        ))
+    else:
+        cur.execute("""
+            INSERT INTO feedback (user_query, extracted_symptoms, system_response, score, openAI_response) 
+           VALUES (?, ?, ?, ?, ?)
+             """, (
         _as_string(user_query),
         _as_string(extracted_symptoms),
         _as_string(system_response),
         float(score) if score is not None else None,
         _as_string(openAI_response)
     ))
-    conn.commit()
-    conn.close()
+    conn.commit()    
 # ...end save ingteraction to DB...
 
 class QueryRequest(BaseModel):
@@ -272,6 +317,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
