@@ -1,6 +1,10 @@
 import streamlit as st
 import textwrap
 
+with st.sidebar:    
+    "[AI Doctor](app.py)"
+    "[Prakriti Finder](Pages/prakriti.py)"
+
 # ==============================================================================
 # DATA DEFINITIONS
 # This data is sourced directly from the original JS files.
@@ -314,4 +318,5 @@ def main():
         display_quiz()
 
 if __name__ == "__main__":
+
     main()
