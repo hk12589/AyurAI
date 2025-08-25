@@ -173,12 +173,22 @@ def get_remedy(request: QueryRequest):
 import streamlit as st
 import requests
 import re
+from st_pages import Page, Section, show_pages, add_page_title, hide_pages
+
+add_page_title()
+
+show_pages(
+    [   
+        Page("app.py", "AI Doctor", "🤖"),
+        Page("Pages/2_📝_prakritiquiz.py", "Prakriti Finder", "📝")
+    ]
+)
 
 #API_URL = "http://localhost:8000/get_remedy"
 API_URL = "http://127.0.0.1:8000/get_remedy"
 
 
-st.set_page_config(page_title="Ayurveda Remedy Chatbot", layout="centered")
+st.set_page_config(page_title="Ayurveda Remedy Chatbot", page_icon="🌿",layout="centered")
 st.title("🪷 Ayurveda Remedy Recommender")
 
 def clean_llm_response(response: str):
@@ -273,6 +283,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
