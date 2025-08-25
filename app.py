@@ -14,7 +14,7 @@ from openai import OpenAI
 import streamlit as st
 
 # Create the SQL connection to pets_db as specified in your secrets file.
-conn = st.connection('interactions_db', type='sql')
+conn = st.connection('ayurAI_chatbot_db', type='sql')
 
 # Load key from streamlit secrets
 openai_api_key = st.secrets["openAI_key"]
@@ -76,26 +76,27 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
         return str(obj)
         
     with conn.session as s:
-        s.execute("""CREATE TABLE IF NOT EXISTS interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_query TEXT,
-        extracted_symptoms TEXT,
-        system_response TEXT,
-        score REAL,
-        openAI_response TEXT,                      
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        ); """)
         s.execute("""
-                 INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
-                 VALUES (?, ?, ?, ?, ?)
-                """, (
-                _as_string(user_query),
-                _as_string(extracted_symptoms),
-                _as_string(system_response),
-                float(score) if score is not None else None,
-                _as_string(openAI_response)
-            ))
-        s.commit()   
+            CREATE TABLE IF NOT EXISTS interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_query TEXT,
+            extracted_symptoms TEXT,
+            system_response TEXT,
+            score REAL,
+            openAI_response TEXT,                      
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+        s.execute("""
+            INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            _as_string(user_query),
+            _as_string(extracted_symptoms),
+            _as_string(system_response),
+            float(score) if score is not None else None,
+            _as_string(openAI_response)
+        ))
 # ...end save ingteraction to DB...
 
 class QueryRequest(BaseModel):
@@ -280,6 +281,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
