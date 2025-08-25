@@ -94,7 +94,7 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
             _as_string(user_query),
             _as_string(extracted_symptoms),
             _as_string(system_response),
-            _as_string(score),
+             score,
             _as_string(openAI_response)
         ))
 # ...end save ingteraction to DB...
@@ -281,6 +281,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
