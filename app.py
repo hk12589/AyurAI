@@ -174,6 +174,12 @@ import streamlit as st
 import requests
 import re
 
+with st.sidebar:    
+    "[AI Doctor](app.py)"
+    "[Prakriti Finder](Pages/prakriti.py)"
+   
+
+
 #API_URL = "http://localhost:8000/get_remedy"
 API_URL = "http://127.0.0.1:8000/get_remedy"
 
@@ -272,6 +278,7 @@ if st.button("Get Remedy"):
     st.rerun()
 
     st.rerun()
+
 
 
 
