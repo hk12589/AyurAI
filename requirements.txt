@@ -6,3 +6,4 @@ fastapi
 streamlit
 uvicorn[standard]
 pysqlite3-binary
+st-pages
