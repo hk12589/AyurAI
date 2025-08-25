@@ -58,45 +58,37 @@ import sqlite3
 # ...start save ingteraction to DB...
 def save_interaction(user_query, extracted_symptoms, system_response, score, openAI_response):
     import json
-    def _as_string(obj):
-        if obj is None:
-            return ""
-        if isinstance(obj, str):
-            return obj
-        if isinstance(obj, dict):
-            return json.dumps(obj, ensure_ascii=False)
-        if isinstance(obj, list):
-            # if all items are strings, join them, otherwise serialize as JSON
-            if all(isinstance(x, str) for x in obj):
-                return ", ".join(obj)
-            try:
-                return json.dumps(obj, ensure_ascii=False)
-            except TypeError:
-                return ", ".join(map(str, obj))
-        return str(obj)
-        
-    with conn.session as s:
-        s.execute("""
-            CREATE TABLE IF NOT EXISTS interactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_query TEXT,
-            extracted_symptoms TEXT,
-            system_response TEXT,
-            score REAL,
-            openAI_response TEXT,                      
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        s.execute("""
-            INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
-            VALUES (?, ?, ?, ?, ?)
-        """, (
-            _as_string(user_query),
-            _as_string(extracted_symptoms),
-            _as_string(system_response),
-             score,
-            _as_string(openAI_response)
-        ))
+    try:
+        # Explicitly cast all variables to their expected types to prevent errors
+        query_str = str(user_query or "")
+        symptoms_str = json.dumps(extracted_symptoms) if isinstance(extracted_symptoms, list) else str(extracted_symptoms or "")
+        response_str = json.dumps(system_response) if isinstance(system_response, (list, dict)) else str(system_response or "")
+        final_score = float(score) if score is not None else 0.0
+        openai_str = str(openAI_response or "")
+
+        with conn.session as s:
+            s.execute("""
+                CREATE TABLE IF NOT EXISTS interactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_query TEXT,
+                extracted_symptoms TEXT,
+                system_response TEXT,
+                score REAL,
+                openAI_response TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
+            s.execute(
+                """
+                INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (query_str, symptoms_str, response_str, final_score, openai_str),
+            )
+            s.commit()
+    except Exception as e:
+        # Log the error without stopping the app for the user
+        print(f"Database save error: {e}")
 # ...end save ingteraction to DB...
 
 class QueryRequest(BaseModel):
@@ -281,6 +273,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
