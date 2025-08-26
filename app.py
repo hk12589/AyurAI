@@ -224,19 +224,16 @@ if "messages" not in st.session_state:
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if prompt := st.chat_input():
+if prompt := st.chat_input("How can I help you?", key="user_prompt"):
     print(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     with st.spinner("Finding remedy..."):            
-            response = get_remedy(QueryRequest(query=prompt))
-     #if res.status_code == 200:
+        response = get_remedy(QueryRequest(query=prompt))
     msg = response["recommendation"]
-
-     #else:
-     #   msg = "I'm sorry, I couldn't process your request at the moment."
     st.session_state.messages.append({"role": "assistant", "content": msg})
     st.chat_message("assistant").write(msg)
+
 
 
 
