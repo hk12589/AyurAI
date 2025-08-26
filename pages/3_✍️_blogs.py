@@ -20,7 +20,7 @@ BLOG_POSTS = [
         "title": "Yoga and Ayurveda: A Perfect Synergy 🧘‍♀️🌿",
         "description": "Welcome to our comprehensive guide on the beautiful synergy between Yoga and Ayurveda...",
         "image_path": "img/1.jpg",
-        "link": "Yoga_and_Ayurveda_blog_page"
+        "link": "Yoga_and_Ayurveda_Blog_Page"
     },
     {
         "title": "Top 10 Ayurvedic Herbs for Daily Health 🌿✨",
