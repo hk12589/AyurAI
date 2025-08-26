@@ -89,7 +89,7 @@ def insert_interactions(user_query, extracted_symptoms, system_response, score, 
     try:
         # 1. Establish a connection
         conn = mysql.connector.connect(
-            host=dbhost
+            host=dbhost,
             port=dbport,                # default MySQL port
             user=dbuser,
             password=dbpassword,
@@ -306,6 +306,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
