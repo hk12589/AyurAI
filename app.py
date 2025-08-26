@@ -12,10 +12,17 @@ import json
 from huggingface_hub import InferenceClient
 from openai import OpenAI
 import streamlit as st
+import mysql.connector
+from mysql.connector import Error
 
 # Load key from streamlit secrets
 openai_api_key = st.secrets["openAI_key"]
 OpenAIClient = OpenAI(api_key=openai_api_key)  # Replace with your OpenAI API key
+dbhost = st.secrets["host"]
+dbport = st.secrets["port"]
+dbuser = st.secrets["user"]
+dbpassword = st.secrets["password"]
+dbdatabase = st.secrets["database"]
 
 # Load models
 @st.cache_resource
@@ -50,12 +57,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-import sqlite3
-# ...start save ingteraction to DB...
-def save_interaction(user_query, extracted_symptoms, system_response, score, openAI_response):
-    import json
-    def _as_string(obj):
+def _as_string(obj):
         if obj is None:
             return ""
         if isinstance(obj, str):
@@ -72,21 +74,55 @@ def save_interaction(user_query, extracted_symptoms, system_response, score, ope
                 return ", ".join(map(str, obj))
         return str(obj)
 
-    conn = sqlite3.connect("ayurAI_chatbot.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO interactions (user_query, extracted_symptoms, system_response, score, openAI_response)
-        VALUES (?, ?, ?, ?, ?)
-    """, (
-        _as_string(user_query),
-        _as_string(extracted_symptoms),
-        _as_string(system_response),
-        float(score) if score is not None else None,
-        _as_string(openAI_response)
-    ))
-    conn.commit()
-    conn.close()
-# ...end save ingteraction to DB...
+def insert_interactions(user_query, extracted_symptoms, system_response, score, openAI_response):
+    """
+    Inserts one or more interaction records into the MySQL `interactions` table.
+    
+    :param records: List of tuples, each tuple matches the
+                    (user_query, extracted_symptoms, system_response, score, openAI_response)
+    """
+    records = [(_as_string(user_query), 
+                _as_string(extracted_symptoms), 
+                _as_string(system_response), 
+                float(score) if score is not None else 0.0, 
+                _as_string(openAI_response))]
+    try:
+        # 1. Establish a connection
+        conn = mysql.connector.connect(
+            host=dbhost
+            port=dbport,                # default MySQL port
+            user=dbuser,
+            password=dbpassword,
+            database=dbdatabase
+        )
+        if not conn.is_connected():
+            raise Error("Failed to connect to database")
+
+        cursor = conn.cursor()
+
+        # 2. Prepare the INSERT statement
+        sql = """
+            INSERT INTO interactions
+                (user_query, extracted_symptoms, system_response, score, openAI_response)
+            VALUES
+                (%s, %s, %s, %s, %s)
+        """
+
+        # 3. Execute one or multiple inserts
+        cursor.executemany(sql, records)
+
+        # 4. Commit to persist changes
+        conn.commit()
+        print(f"{cursor.rowcount} record(s) inserted, last insert ID: {cursor.lastrowid}")
+
+    except Error as e:
+        print("Error:", e)
+    finally:
+        # 5. Clean up
+        if cursor:
+            cursor.close()
+        if conn and conn.is_connected():
+            conn.close()
 
 class QueryRequest(BaseModel):
     query: str
@@ -161,7 +197,7 @@ def get_remedy(request: QueryRequest):
         
         #response = "The best match is Match 1: Acne \u2014 a Pitta-type condition. Pitta imbalance in the skin produces heat and inflammation, so acne often appears as red, inflamed pimples that can flare with emotional stress, premenstrual or hormonal changes, too much sun, chemical exposure, or bacterial irritation.\n\nRecommended Ayurvedic approach (what to do):\n\n1. Internal/herbal remedies\n- Cumin\u2013coriander\u2013fennel tea: 1/3 teaspoon each, steep and drink after meals, three times daily \u2014 cooling and digestion-supporting. \n- Kutki + guduchi + shatavari: about 1/4 teaspoon (combined) after meals, 2\u20133 times/day \u2014 helps reduce internal heat and supports liver/immune balance. \n- Amalaki powder (Indian gooseberry): 1/2\u20131 teaspoon before bed \u2014 cooling and antioxidant. \n- Aloe vera juice: 1/2 cup twice daily \u2014 soothes and cools Pitta.\n\n2. Topical, external care\n- Almond paste: apply on affected areas and leave for ~30 minutes, then rinse \u2014 gentle nourishment. \n- Sandalwood + turmeric paste mixed with goat\u2019s milk: cooling, anti-inflammatory paste for spot application. \n- Chickpea (gram) flour paste: gentle cleanser/mask to absorb oil and calm skin. \n- Rubbing melon on the skin overnight or using fresh cooling pulp can soothe inflamed spots.\n\n3. Diet and daily regimen (pathya)\n- Follow a Pitta\u2011pacifying diet: favor bland, cooling foods \u2014 rice, oatmeal, applesauce. \n- Avoid spicy, fried, fermented, very salty foods and citrus fruits, and reduce alcohol and caffeine. \n- Limit direct sun exposure and avoid chemical irritants on skin (harsh cosmetics).\n\n4. Lifestyle, stress and breathing\n- Manage stress with visualization/meditation. \n- Practice left\u2011nostril breathing (Chandra/soft-moon breath) 5\u201310 minutes daily to calm Pitta. \n- Gentle yoga: Moon salutation and Lion pose can be helpful. \n- Reduce behaviors that increase emotional strain (for example, avoid frequent mirror\u2011checking).\n\n5. Miscellaneous\n- Keep the face clean with gentle, non\u2011irritating products. Avoid harsh scrubs or frequent picking. \n- If there are signs of a bacterial infection (increasing pain, warmth, spreading redness, fever) or severe/nodular acne, see a dermatologist for evaluation and possible medical treatment.\n\nIf you\u2019d like, I can turn this into a simple daily plan (what to take/when and a short morning/evening routine) based on your current medications and any allergies."
         print("Response from OpenAI:", response.choices[0].message.content)
-        save_interaction(user_input, extracted_symptoms, matches, avgscore, response.choices[0].message.content)
+        insert_interactions(user_input, extracted_symptoms, matches, avgscore, response.choices[0].message.content)
         
         return {
         "extracted_symptoms": extracted_symptoms,
@@ -270,6 +306,7 @@ if st.button("Get Remedy"):
         st.session_state.messages.append({"role": "bot", "content": data["recommendation"]})
         
     st.rerun()
+
 
 
 
